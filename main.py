@@ -1,8 +1,12 @@
 import requests
 import json
 import os
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
+app = FastAPI()
 VK_API_VERSION = "5.199"
+FILE = "data.json"
 
 def get_user_info(token, user_id):
     base_url = "https://api.vk.com/method/"
@@ -51,10 +55,20 @@ def get_user_info(token, user_id):
         "subscriptions": subscription_groups
     }
 
-token = os.getenv("VK_API_TOKEN", "")
-user_id = os.getenv("VK_USER_ID", "276657425")
-
-data = get_user_info(token, user_id)
-if data:
-    with open("data.json", 'w', encoding='utf-8') as file:
+@app.on_event("startup")
+def fetch_data():
+    token = os.getenv("VK_API_TOKEN", "")
+    user_id = os.getenv("VK_USER_ID", "276657425")
+    data = get_user_info(token, user_id)
+    
+    os.makedirs(os.path.dirname(FILE), exist_ok=True)
+    with open(FILE, 'w', encoding='utf-8') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+@app.get("/data")
+def read_data():
+    if os.path.exists(FILE):
+        with open(FILE, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return JSONResponse(content=data)
+    return JSONResponse(content={"error": "Data not found"}, status_code=404)
