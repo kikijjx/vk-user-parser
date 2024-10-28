@@ -72,3 +72,7 @@ def read_data():
             data = json.load(file)
         return JSONResponse(content=data)
     return JSONResponse(content={"error": "Data not found"}, status_code=404)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
